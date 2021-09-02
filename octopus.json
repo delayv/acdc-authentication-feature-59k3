@@ -91,22 +91,6 @@
           "options": {
             "overwrite": true
           }
-        },
-        {
-          "type": "copy",
-          "src": "../pdm-web-components/dist/pdm-web-components",
-          "target": "./code/assets/pdm-web-components",
-          "options": {
-            "overwrite": true
-          }
-        },
-        {
-          "type": "copy",
-          "src": "../pdm-web-components/css/globalStyles.css",
-          "target": "./code/assets/skin.css",
-          "options": {
-            "overwrite": true
-          }
         }
       ]
     }

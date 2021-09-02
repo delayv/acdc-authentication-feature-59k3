@@ -1,4 +1,4 @@
-import {EVENT_REFRESH, LocalizedController} from "../../assets/pdm-web-components/index.esm.js";
+const {WebcController} = WebCardinal.controllers;
 
 /**
  * Controls Application Flow
@@ -7,34 +7,34 @@ import {EVENT_REFRESH, LocalizedController} from "../../assets/pdm-web-component
  * @class ScanController
  * @module controllers
  */
-export default class ScanController extends LocalizedController {
+export default class ScanController extends WebcController {
 
     initializeModel = () => ({});
 
     constructor(...args) {
         super(false, ...args)
-        let self = this;
-        super.bindLocale(this, "scan");
-        this.model = self.initializeModel();
-
-        self.on(EVENT_REFRESH, async (evt) => {
-            evt.preventDefault();
-            evt.stopImmediatePropagation();
-            await self.showBarcodeScanner({
-                title: self.translate('title'),
-                data: evt.detail
-            }, self._parseScan.bind(self));
-        }, {capture: true});
+        // let self = this;
+        // super.bindLocale(this, "scan");
+        // this.model = self.initializeModel();
+        //
+        // self.on(EVENT_REFRESH, async (evt) => {
+        //     evt.preventDefault();
+        //     evt.stopImmediatePropagation();
+        //     await self.showBarcodeScanner({
+        //         title: self.translate('title'),
+        //         data: evt.detail
+        //     }, self._parseScan.bind(self));
+        // }, {capture: true});
     }
 
-    async _parseScan(err, scanData) {
-        console.log(scanData);
-        const self = this;
-        const scannedData = scanData.result;
-        self.model.scannedData = scannedData;
-        const html = `<ion-badge color="primary"> Data: < ${scannedData} > </ion-badge>`
-        const div = document.createElement('div');
-        div.innerHTML = html;
-        document.getElementById('response').appendChild(div);
-    }
+    // async _parseScan(err, scanData) {
+    //     console.log(scanData);
+    //     const self = this;
+    //     const scannedData = scanData.result;
+    //     self.model.scannedData = scannedData;
+    //     const html = `<ion-badge color="primary"> Data: < ${scannedData} > </ion-badge>`
+    //     const div = document.createElement('div');
+    //     div.innerHTML = html;
+    //     document.getElementById('response').appendChild(div);
+    // }
 }

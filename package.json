@@ -4,7 +4,7 @@
   "description": "Pharmaledger Demo SSAPP Template",
   "scripts": {
     "prebuild": "node ./node_modules/octopus/scripts/run prebuild devmode",
-    "build": "node ./node_modules/octopus/scripts/buildDossier ./bin/build.file --domain=traceability",
+    "build": "node ./node_modules/octopus/scripts/buildDossier ./bin/build.file --domain=epi",
     "postbuild": "node ./node_modules/octopus/scripts/run postbuild devmode",
     "update": "npm install",
     "test": "echo \"Error: no test specified\" && exit 1"
