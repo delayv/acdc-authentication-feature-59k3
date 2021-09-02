@@ -1,7 +1,0 @@
-{
-  "name": "fgt-demo-ssapp",
-  "integrations": {
-    "capacitor": {}
-  },
-  "type": "custom"
-}

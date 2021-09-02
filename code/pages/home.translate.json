@@ -1,6 +1,5 @@
 {
-  "title": "Pharmaledger's Demo SSApp",
-  "logout": "Logout",
+  "title": "Pharmaledger's Demo Authentication Feature SSApp",
   "loading": {
     "loading": {
       "status": "Loading Application...",
@@ -29,6 +28,5 @@
   "scan": {
     "title": "Please Scan your pack",
     "changeCamera": "Change camera"
-  },
-  "none": "You are not identified as a User. This application was not correctly built"
+  }
 }
