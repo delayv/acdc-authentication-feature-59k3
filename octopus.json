@@ -65,20 +65,6 @@
       ]
     },
     {
-      "name": "Copy fgt-dsu-wizard-bundle",
-      "src": "",
-      "actions": [
-        {
-          "type": "copy",
-          "src": "../fgt-dsu-wizard/build/bundles/wizard.js",
-          "target": "code/scripts/bundles/wizard.js",
-          "options": {
-            "overwrite": true
-          }
-        }
-      ]
-    },
-    {
       "name": "Copy Ionic Dependencies",
       "src": "",
       "actions": [
@@ -102,14 +88,6 @@
           "type": "copy",
           "src": "./node_modules/ionicons/dist/ionicons",
           "target": "./code/assets/ionic-core/ionicons",
-          "options": {
-            "overwrite": true
-          }
-        },
-        {
-          "type": "copy",
-          "src": "./node_modules/@ionic/pwa-elements/dist/ionicpwaelements",
-          "target": "./code/assets/ionic-core/pwa-elements",
           "options": {
             "overwrite": true
           }
