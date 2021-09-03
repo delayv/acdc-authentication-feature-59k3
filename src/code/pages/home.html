@@ -47,8 +47,8 @@
                                         </ion-item>
                                     </ion-card-content>
                                 </ion-card>
-                                <ion-buttons>
-                                    <ion-button slot="primary" fill="solid" color="primary" data-tag="">
+                                <ion-buttons class="ion-margin-top">
+                                    <ion-button slot="primary" fill="solid" color="secondary" data-tag="scan">
                                         Scan
                                     </ion-button>
                                 </ion-buttons>
@@ -58,5 +58,6 @@
                 </ion-col>
             </ion-row>
         </ion-grid>
+        <pdm-barcode-scanner-controller barcode-title="@scan-title"></pdm-barcode-scanner-controller>
     </ion-app>
 </webc-container>

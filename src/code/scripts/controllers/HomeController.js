@@ -1,3 +1,5 @@
+import interpretGS1scan from "../utils/interpretGS1scan/interpretGS1scan.js";
+
 const {WebcController} = WebCardinal.controllers;
 
 class AuthFeatureError {
@@ -113,31 +115,49 @@ export default class HomeController extends WebcController{
         });
     }
 
-    verifyPack(){
+    async verifyPack(){
         const self = this;
 
         const showError = function(error){
             self.showErrorModal("Authentication Feature", error.message || error);
         }
 
-        self.scanCode((err, scanData) => {
+        await self.scanCode((err, scanData) => {
             if (err)
                 return showError(`Could not scan Pack`);
+            console.log(scanData);
             const isValid = self.verify(scanData);
             self.report(isValid, isValid ? undefined : "Package is not valid");
         });
     }
 
-    scanCode(callback){
+    async scanCode(callback){
         const self = this;
-        self.barcodeScannerController.holdForScan((err, scanData) => err
+        await self.barcodeScannerController.present((err, scanData) => err
                 ? callback(err)
-                : callback(undefined, scanData));
+                : callback(undefined, self.parseScanData(scanData.result)));
+    }
+
+    parseScanData(result){
+        const interpretedData = interpretGS1scan.interpretScan(result);
+        const data = interpretedData.AIbrackets.split(/\(\d{1,2}\)/g);
+        result = {
+            gtin: data[0],
+            expiry: data[1],
+            batchNumber: data[2],
+            serialNumber: data[3]
+        }
+        return result;
     }
 
     verify(scanData){
         const self = this;
         return Object.keys(scanData).every(key => {
+            if (key === 'expiry'){
+                const dateA = new Date(scanData[key]).getTime();
+                const dateB = new Date(self.model.gs1Data[key]).getTime();
+                return dateA === dateB;
+            }
             return scanData[key] === self.model.gs1Data[key];
         });
     }
