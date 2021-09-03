@@ -19,7 +19,55 @@
                     <ion-tabs id="main-content">
                         <ion-tab tab="tab-dashboard">
                             <ion-content class="tab-content" overflow-scroll="true">
-                                Put content here
+                                <ion-card>
+                                    <ion-card-header>
+                                        <ion-card-subtitle>
+                                            <div data-if="@product">
+                                                <div slot="true">
+                                                    {{ @product.manufName }}
+                                                </div>
+                                                <div slot="false">
+                                                    <ion-skeleton-text animated="true"></ion-skeleton-text>
+                                                </div>
+                                            </div>
+                                        </ion-card-subtitle>
+                                        <ion-card-title>
+                                            <div data-if="@product">
+                                                <div slot="true">
+                                                    {{ @product.name }}
+                                                </div>
+                                                <div slot="false">
+                                                    <ion-skeleton-text animated="true"></ion-skeleton-text>
+                                                </div>
+                                            </div>
+                                        </ion-card-title>
+                                    </ion-card-header>
+                                    <ion-card-content>
+                                        <ion-item lines="none">
+                                            <ion-label position="stacked">Product Code</ion-label>
+                                            <ion-input type="text" disabled="true" value="@gs1Data.gtin"></ion-input>
+                                        </ion-item>
+                                        <ion-item lines="none">
+                                            <ion-label position="stacked">Batch Number</ion-label>
+                                            <ion-input type="text" disabled="true" value="@gs1Data.batchNumber"></ion-input>
+                                        </ion-item>
+                                        <ion-item lines="none">
+                                            <ion-label position="stacked">Serial Number</ion-label>
+                                            <ion-input type="text" disabled="true" value="@gs1Data.serialNumber"></ion-input>
+                                        </ion-item>
+                                        <ion-item lines="none">
+                                            <ion-label position="stacked">Expiry</ion-label>
+                                            <div data-if="@batch">
+                                                <div slot="true">
+                                                    <ion-input type="text" disabled="true" value="@batch.expiry"></ion-input>
+                                                </div>
+                                                <div slot="false">
+                                                    <ion-skeleton-text animated="true"></ion-skeleton-text>
+                                                </div>
+                                            </div>
+                                        </ion-item>
+                                    </ion-card-content>
+                                </ion-card>
                             </ion-content>
                         </ion-tab>
                     </ion-tabs>
