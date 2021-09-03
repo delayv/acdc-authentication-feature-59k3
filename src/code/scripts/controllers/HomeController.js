@@ -1,5 +1,30 @@
 const {WebcController} = WebCardinal.controllers;
 
+class AuthFeatureError {
+    code = 0;
+    message = undefined;
+
+    constructor(error){
+        if (typeof error === 'string'){
+            this.code = 1;
+            this.message = error;
+        } else {
+            this.code = error.code;
+            this.message = error.message;
+        }
+    }
+}
+
+class AuthFeatureResponse  {
+    status = false;
+    error = undefined;
+
+    constructor(status, error) {
+        this.status = status;
+        this.error = error ? new AuthFeatureError(error) : undefined;
+    }
+}
+
 /**
  * https://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
  * @param query
@@ -69,8 +94,11 @@ export default class HomeController extends WebcController{
         super(element, history, ...args);
         const gs1Data = getQueryStringParams();
         this.model.gs1Data = gs1Data;
-
+        this.barcodeScannerController = this.element.querySelector('pdm-barcode-scanner-controller');
         const self = this;
+
+        this.onTagClick('scan', self.verifyPack.bind(self));
+
         getProductInfo(gs1Data.gtin, (err, product) => {
             if (err)
                 console.log(`Could not read product info`, err);
@@ -83,5 +111,43 @@ export default class HomeController extends WebcController{
                     self.model.batch = batch;
             });
         });
+    }
+
+    verifyPack(){
+        const self = this;
+
+        const showError = function(error){
+            self.showErrorModal("Authentication Feature", error.message || error);
+        }
+
+        self.scanCode((err, scanData) => {
+            if (err)
+                return showError(`Could not scan Pack`);
+            const isValid = self.verify(scanData);
+            self.report(isValid, isValid ? undefined : "Package is not valid");
+        });
+    }
+
+    scanCode(callback){
+        const self = this;
+        self.barcodeScannerController.holdForScan((err, scanData) => err
+                ? callback(err)
+                : callback(undefined, scanData));
+    }
+
+    verify(scanData){
+        const self = this;
+        return Object.keys(scanData).every(key => {
+            return scanData[key] === self.model.gs1Data[key];
+        });
+    }
+
+    report(status, error){
+        const event = new CustomEvent('ssapp-action', {
+            bubbles: true,
+            cancelable: true,
+            detail: new AuthFeatureResponse(status, error)
+        });
+        this.element.dispatchEvent(event);
     }
 }

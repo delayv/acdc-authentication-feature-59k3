@@ -18,9 +18,9 @@
                 <ion-col>
                     <ion-tabs id="main-content">
                         <ion-tab tab="tab-dashboard">
-                            <ion-content class="tab-content" overflow-scroll="true">
-                                <ion-card color="medium">
-                                    <ion-card-header>
+                            <ion-content class="tab-content ion-padding" overflow-scroll="true">
+                                <ion-card color="primary">
+                                    <ion-card-header class="ion-padding ion-margin-horizontal">
                                         <ion-card-subtitle>
                                             {{ @product.manufName }}
                                         </ion-card-subtitle>
@@ -45,13 +45,13 @@
                                             <ion-label position="stacked">Expiry</ion-label>
                                             <ion-input type="text" disabled="true" value="@batch.expiry"></ion-input>
                                         </ion-item>
-                                        <ion-buttons>
-                                            <ion-button slot="primary" color="primary">
-                                                Scan
-                                            </ion-button>
-                                        </ion-buttons>
                                     </ion-card-content>
                                 </ion-card>
+                                <ion-buttons>
+                                    <ion-button slot="primary" fill="solid" color="primary" data-tag="">
+                                        Scan
+                                    </ion-button>
+                                </ion-buttons>
                             </ion-content>
                         </ion-tab>
                     </ion-tabs>
