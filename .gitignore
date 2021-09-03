@@ -1,6 +1,6 @@
 seed
 node_modules
-code/constitution
-code/scripts/bundles
-code/assets/ionic-core
-code/assets/pdm-web-components
+src/code/constitution
+src/code/scripts/bundles
+src/code/assets/ionic-core
+src/code/assets/pdm-web-components

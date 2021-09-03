@@ -21,7 +21,7 @@
         {
           "type": "copy",
           "src": "../privatesky/psknode/bundles/pskruntime.js",
-          "target": "code/constitution/pskruntime.js",
+          "target": "src/code/constitution/pskruntime.js",
           "options": {
             "overwrite": true
           }
@@ -29,7 +29,7 @@
         {
           "type": "copy",
           "src": "../privatesky/psknode/bundles/webshims.js",
-          "target": "code/constitution/webshims.js",
+          "target": "src/code/constitution/webshims.js",
           "options": {
             "overwrite": true
           }
@@ -37,7 +37,7 @@
         {
           "type": "copy",
           "src": "../privatesky/psknode/bundles/pskruntime.js",
-          "target": "code/scripts/bundles/pskruntime.js",
+          "target": "src/code/scripts/bundles/pskruntime.js",
           "options": {
             "overwrite": true
           }
@@ -45,7 +45,7 @@
         {
           "type": "copy",
           "src": "../privatesky/psknode/bundles/webshims.js",
-          "target": "code/scripts/bundles/webshims.js",
+          "target": "src/code/scripts/bundles/webshims.js",
           "options": {
             "overwrite": true
           }
@@ -53,7 +53,7 @@
         {
           "type": "copy",
           "src": "../privatesky/psknode/bundles/iframeBoot.js",
-          "target": "code/scripts/bundles/iframeBoot.js",
+          "target": "src/code/scripts/bundles/iframeBoot.js",
           "options": {
             "overwrite": true
           }
@@ -71,7 +71,7 @@
         {
           "type": "copy",
           "src": "./node_modules/@ionic/core/dist/ionic",
-          "target": "./code/assets/ionic-core",
+          "target": "./src/code/assets/ionic-core",
           "options": {
             "overwrite": true
           }
@@ -79,7 +79,7 @@
         {
           "type": "copy",
           "src": "./node_modules/@ionic/core/css",
-          "target": "./code/assets/ionic-core/css",
+          "target": "./src/code/assets/ionic-core/css",
           "options": {
             "overwrite": true
           }
@@ -87,7 +87,7 @@
         {
           "type": "copy",
           "src": "./node_modules/ionicons/dist/ionicons",
-          "target": "./code/assets/ionic-core/ionicons",
+          "target": "./src/code/assets/ionic-core/ionicons",
           "options": {
             "overwrite": true
           }
@@ -95,7 +95,7 @@
         {
           "type": "copy",
           "src": "../pdm-web-components/dist/pdm-web-components",
-          "target": "./code/assets/pdm-web-components",
+          "target": "./src/code/assets/pdm-web-components",
           "options": {
             "overwrite": true
           }
@@ -103,7 +103,7 @@
         {
           "type": "copy",
           "src": "../pdm-web-components/css/globalStyles.css",
-          "target": "./code/assets/skin.css",
+          "target": "./src/code/assets/skin.css",
           "options": {
             "overwrite": true
           }
