@@ -59,6 +59,14 @@
           }
         },
         {
+          "type": "copy",
+          "src": "../gtin-resolver/build/bundles/gtinResolver.js",
+          "target": "src/code/scripts/bundles/gtinResolver.js",
+          "options": {
+            "overwrite": true
+          }
+        },
+        {
           "type": "remove",
           "target": "./builds"
         }
