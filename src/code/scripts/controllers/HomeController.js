@@ -142,10 +142,10 @@ export default class HomeController extends WebcController{
         const interpretedData = interpretGS1scan.interpretScan(result);
         const data = interpretedData.AIbrackets.split(/\(\d{1,2}\)/g);
         result = {
-            gtin: data[0],
-            expiry: data[1],
-            batchNumber: data[2],
-            serialNumber: data[3]
+            gtin: data[1],
+            expiry: data[2],
+            batchNumber: data[3],
+            serialNumber: data[4]
         }
         return result;
     }
@@ -154,8 +154,8 @@ export default class HomeController extends WebcController{
         const self = this;
         return Object.keys(scanData).every(key => {
             if (key === 'expiry'){
-                const dateA = new Date(scanData[key]).getTime();
-                const dateB = new Date(self.model.gs1Data[key]).getTime();
+                const dateA = new Date(scanData[key].replace(/(\d{2})(\d{2})(\d{2})/g,'$2/$3/$1')).getTime();
+                const dateB = new Date(self.model.gs1Data[key].replaceAll(" - ", "/")).getTime();
                 return dateA === dateB;
             }
             return scanData[key] === self.model.gs1Data[key];
