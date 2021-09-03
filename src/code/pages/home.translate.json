@@ -1,32 +1,3 @@
 {
-  "title": "Demo Authentication Feature",
-  "loading": {
-    "loading": {
-      "status": "Loading Application...",
-      "progress": 10
-    },
-    "loaded": {
-      "status": "Application Loaded!",
-      "progress": 70
-    },
-    "booting": {
-      "status": "Booting Application",
-      "progress": 90
-    },
-    "booted": {
-      "status": "Welcome",
-      "progress": 100
-    }
-  },
-  "menu": {
-    "dashboard": "Dashboard",
-    "scan": "Scan"
-  },
-  "dashboard": {
-    "welcome": "This is a Dashboard"
-  },
-  "scan": {
-    "title": "Please Scan your pack",
-    "changeCamera": "Change camera"
-  }
+  "title": "Demo Authentication Feature"
 }

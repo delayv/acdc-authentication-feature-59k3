@@ -115,6 +115,14 @@
           "options": {
             "overwrite": true
           }
+        },
+        {
+          "type": "copy",
+          "src": "../native-integration/build/bundles/camera.js",
+          "target": "src/code/scripts/bundles/camera.js",
+          "options": {
+            "overwrite": true
+          }
         }
       ]
     }
