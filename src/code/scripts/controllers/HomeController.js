@@ -6,7 +6,12 @@ const {WebcController} = WebCardinal.controllers;
  * @returns {*}
  */
 const getQueryStringParams = () => {
-    const query = window.frameElement.src;
+
+    const parseQuery = function(query){
+        return query.split("?").slice(1).join('?')
+    }
+
+    const query = parseQuery(window.frameElement.src);
     return query
         ? (/^[?#]/.test(query) ? query.slice(1) : query)
             .split('&')
@@ -21,12 +26,12 @@ const getQueryStringParams = () => {
 
 const getProductInfo = function(gtin, callback){
     const gtinResolver = require('gtin-resolver');
-    const keySSI = gtinResolver.createGTIN_SSI('epi', undefined, gtin);
+    const keySSI = gtinResolver.createGTIN_SSI('epi', 'epi', gtin);
     const resolver = require('opendsu').loadApi('resolver');
     resolver.loadDSU(keySSI, (err, dsu) => {
         if (err)
             return callback(err);
-        dsu.readFile('product.json', (err, product) => {
+        dsu.readFile('product/product.json', (err, product) => {
             if (err)
                 return callback(err);
             try{
@@ -41,12 +46,12 @@ const getProductInfo = function(gtin, callback){
 
 const getBatchInfo = function(gtin, batchNumber,  callback){
     const gtinResolver = require('gtin-resolver');
-    const keySSI = gtinResolver.createGTIN_SSI('epi', undefined, gtin, batchNumber);
+    const keySSI = gtinResolver.createGTIN_SSI('epi', 'epi', gtin, batchNumber);
     const resolver = require('opendsu').loadApi('resolver');
     resolver.loadDSU(keySSI, (err, dsu) => {
         if (err)
             return callback(err);
-        dsu.readFile('batch.json', (err, batch) => {
+        dsu.readFile('batch/batch.json', (err, batch) => {
             if (err)
                 return callback(err);
             try{

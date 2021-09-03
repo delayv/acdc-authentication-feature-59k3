@@ -19,27 +19,13 @@
                     <ion-tabs id="main-content">
                         <ion-tab tab="tab-dashboard">
                             <ion-content class="tab-content" overflow-scroll="true">
-                                <ion-card>
+                                <ion-card color="medium">
                                     <ion-card-header>
                                         <ion-card-subtitle>
-                                            <div data-if="@product">
-                                                <div slot="true">
-                                                    {{ @product.manufName }}
-                                                </div>
-                                                <div slot="false">
-                                                    <ion-skeleton-text animated="true"></ion-skeleton-text>
-                                                </div>
-                                            </div>
+                                            {{ @product.manufName }}
                                         </ion-card-subtitle>
                                         <ion-card-title>
-                                            <div data-if="@product">
-                                                <div slot="true">
-                                                    {{ @product.name }}
-                                                </div>
-                                                <div slot="false">
-                                                    <ion-skeleton-text animated="true"></ion-skeleton-text>
-                                                </div>
-                                            </div>
+                                            {{ @product.name }}
                                         </ion-card-title>
                                     </ion-card-header>
                                     <ion-card-content>
@@ -57,15 +43,13 @@
                                         </ion-item>
                                         <ion-item lines="none">
                                             <ion-label position="stacked">Expiry</ion-label>
-                                            <div data-if="@batch">
-                                                <div slot="true">
-                                                    <ion-input type="text" disabled="true" value="@batch.expiry"></ion-input>
-                                                </div>
-                                                <div slot="false">
-                                                    <ion-skeleton-text animated="true"></ion-skeleton-text>
-                                                </div>
-                                            </div>
+                                            <ion-input type="text" disabled="true" value="@batch.expiry"></ion-input>
                                         </ion-item>
+                                        <ion-buttons>
+                                            <ion-button slot="primary" color="primary">
+                                                Scan
+                                            </ion-button>
+                                        </ion-buttons>
                                     </ion-card-content>
                                 </ion-card>
                             </ion-content>
