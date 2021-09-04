@@ -125,7 +125,8 @@ export default class HomeController extends WebcController{
         await self.scanCode((err, scanData) => {
             if (err)
                 return showError(`Could not scan Pack`);
-            console.log(scanData);
+            if (!scanData)
+                return console.log(`No data scanned`);
             const isValid = self.verify(scanData);
             self.report(isValid, isValid ? undefined : "Package is not valid");
         });
@@ -135,7 +136,7 @@ export default class HomeController extends WebcController{
         const self = this;
         await self.barcodeScannerController.present((err, scanData) => err
                 ? callback(err)
-                : callback(undefined, self.parseScanData(scanData.result)));
+                : callback(undefined, scanData ? self.parseScanData(scanData.result) : scanData));
     }
 
     parseScanData(result){
