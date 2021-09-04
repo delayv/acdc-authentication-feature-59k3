@@ -30,26 +30,26 @@
                                     </ion-card-header>
                                     <ion-card-content>
                                         <ion-item lines="none">
-                                            <ion-label position="stacked">Product Code</ion-label>
+                                            <ion-label position="stacked">{{ $details.productCode }}</ion-label>
                                             <ion-input type="text" disabled="true" value="@gs1Data.gtin"></ion-input>
                                         </ion-item>
                                         <ion-item lines="none">
-                                            <ion-label position="stacked">Batch Number</ion-label>
+                                            <ion-label position="stacked">{{ $details.batchNumber }}</ion-label>
                                             <ion-input type="text" disabled="true" value="@gs1Data.batchNumber"></ion-input>
                                         </ion-item>
                                         <ion-item lines="none">
-                                            <ion-label position="stacked">Serial Number</ion-label>
+                                            <ion-label position="stacked">{{ $details.serialNumber }}</ion-label>
                                             <ion-input type="text" disabled="true" value="@gs1Data.serialNumber"></ion-input>
                                         </ion-item>
                                         <ion-item lines="none">
-                                            <ion-label position="stacked">Expiry</ion-label>
+                                            <ion-label position="stacked">{{ $details.expiry }}</ion-label>
                                             <ion-input type="text" disabled="true" value="@batch.expiry"></ion-input>
                                         </ion-item>
                                     </ion-card-content>
                                 </ion-card>
                                 <ion-buttons class="ion-margin-top">
-                                    <ion-button slot="primary" fill="solid" color="secondary" data-tag="scan">
-                                        Scan
+                                    <ion-button slot="primary" size="large" expand="block" fill="solid" color="secondary" data-tag="scan">
+                                        {{ $buttons.scan }}
                                     </ion-button>
                                 </ion-buttons>
                             </ion-content>

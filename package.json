@@ -13,8 +13,7 @@
     "type": "git",
     "url": "git+https://github.com/PharmaLedger-IMI/acdc-authentication-feature-template.git "
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "octopus": "git+https://github.com/PrivateSky/octopus.git",
     "ionicons": "^5.5.1",
