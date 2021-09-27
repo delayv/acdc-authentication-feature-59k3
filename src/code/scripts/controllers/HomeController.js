@@ -101,6 +101,10 @@ export default class HomeController extends WebcController{
 
         this.onTagClick('scan', self.verifyPack.bind(self));
 
+        this.onTagClick('auth', () => {
+            this.navigateToPageTag('auth');
+        })
+
         getProductInfo(gs1Data.gtin, (err, product) => {
             if (err)
                 console.log(`Could not read product info`, err);
