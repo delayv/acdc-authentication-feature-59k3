@@ -154,6 +154,13 @@ export default class HomeController extends WebcController{
 
     abortPackAuthentication() {
         nativeBridge.stopNativeCamera();
+        const authResponse = new AuthFeatureResponse(false, "Authentication Aborted");
+        const event = new CustomEvent('ssapp-action', {
+            bubbles: true,
+            cancelable: true,
+            detail: authResponse
+        });
+        this.element.dispatchEvent(event); 
     }
 
     async verifyPack(){
