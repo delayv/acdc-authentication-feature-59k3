@@ -9,6 +9,7 @@
   },
   "buttons": {
     "scan": "Scan",
-    "auth": "Auth"
+    "auth": "Auth",
+    "abort": "Abort"
   }
 }

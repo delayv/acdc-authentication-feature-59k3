@@ -1,6 +1,7 @@
 import interpretGS1scan from "../utils/interpretGS1scan/interpretGS1scan.js";
 
 const {WebcController} = WebCardinal.controllers;
+const {constants, PLCameraConfig, nativeBridge, imageTypes} = window.Native.Camera;
 
 class AuthFeatureError {
     code = 0;
@@ -92,8 +93,12 @@ const getBatchInfo = function(gtin, batchNumber,  callback){
 }
 
 export default class HomeController extends WebcController{
+    uiElements = {};
+
     constructor(element, history, ...args) {
         super(element, history, ...args);
+        this._bindElements();
+
         const gs1Data = getQueryStringParams();
         this.model.gs1Data = gs1Data;
         this.barcodeScannerController = this.element.querySelector('pdm-barcode-scanner-controller');
@@ -102,7 +107,12 @@ export default class HomeController extends WebcController{
         this.onTagClick('scan', self.verifyPack.bind(self));
 
         this.onTagClick('auth', () => {
-            this.navigateToPageTag('auth');
+            // this.navigateToPageTag('auth');
+            this.authenticatePack();
+        })
+
+        this.onTagClick('abort', () => {
+            this.abortPackAuthentication();
         })
 
         getProductInfo(gs1Data.gtin, (err, product) => {
@@ -117,6 +127,33 @@ export default class HomeController extends WebcController{
                     self.model.batch = batch;
             });
         });
+    }
+
+    _bindElements() {
+        this.uiElements.streamPreview = this.element.querySelector('#streamPreview');
+    }
+
+    authenticatePack() {
+        this.nativeCameraConfig = new PLCameraConfig('hd1920x1080', 'torch', true, true);
+        nativeBridge.startNativeCameraWithConfig(
+            this.nativeCameraConfig,
+            undefined,
+            25,
+            640,
+            undefined,
+            10,
+            () => {
+                this.uiElements.streamPreview.src = `${window.Native.Camera.cameraProps._serverUrl}/mjpeg`;
+            },
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            false);
+    }
+
+    abortPackAuthentication() {
+        nativeBridge.stopNativeCamera();
     }
 
     async verifyPack(){
