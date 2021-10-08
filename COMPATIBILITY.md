@@ -7,3 +7,7 @@ For each test describe:
 * test-case description including reevant preconditions/outcome
 * general remarks
 
+|   model   |   iOS   |   initial loading time   |   response time   |   auth feature loading time   |   preview framerate   |   gl framerate   |   tester   |
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+| SE 1 Gen  | 14.7.1  |                          |                   |                               |                       |                  |     pdm    |
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
