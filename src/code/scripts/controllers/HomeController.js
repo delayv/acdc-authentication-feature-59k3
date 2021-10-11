@@ -3,6 +3,121 @@ import interpretGS1scan from "../utils/interpretGS1scan/interpretGS1scan.js";
 const {WebcController} = WebCardinal.controllers;
 const {constants, PLCameraConfig, nativeBridge, imageTypes} = window.Native.Camera;
 
+class RemoteDetection {
+    constructor() {
+        this.currentResult = {
+            authentic: false,
+            meta: {
+                score: -1.0
+            }
+        };
+        ////////////
+        this.sioEndpoint = "wss://d.2001u1.com";
+        this.preshared_jwt_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NDE0MjQwNTcsImlhdCI6MTYzMzY0ODA1NywiYXVkIjoidXJuOnBsIn0.urejtI30oJC-_MWh0Jrspd6IS0geV5Cuzzjn_0nqPR4'
+        this.sioClient = io(this.sioEndpoint, {
+            onlyBinaryUpgrades: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            rememberUpgrade: true,
+            transports: ['websocket'],
+            query: {
+                token: this.preshared_jwt_token
+            }
+        });
+
+        this.sioClient.on("connect", () => {
+            // console.log(`connected to the server, id=${this.sioClient.id}`);
+        });
+
+        this.sioClient.on("disconnect", () => {
+            // console.log('disconnected from the server');
+        });
+
+
+        this.sioClient.on('detResp', detResult => {
+            // console.log(`client ${this.sioClient.id} received %o`, detResult);
+            this.currentResult = detResult;
+        });
+    }
+
+    static getInstance() {
+      if (!RemoteDetection.instance) {
+        RemoteDetection.instance = new RemoteDetection();
+      }
+      return RemoteDetection.instance;
+    }
+
+    customCopyBuffer(buffer)
+    {
+        var bytes = new Uint8Array(buffer);
+        var output = new ArrayBuffer(buffer.byteLength);
+        var outputBytes = new Uint8Array(output);
+        for (var i = 0; i < bytes.length; i++)
+            outputBytes[i] = bytes[i];
+        return output;
+    }
+
+    authenticate(context) {
+      nativeBridge.getRawFrame(context.roi.x, context.roi.y, context.roi.w, context.roi.h).then(raw => {
+        // let rndVals = new Uint8Array(Array.from({length: 3*256*256}, () => Math.floor(Math.random() * 256)))
+        // let crop = rndVals.buffer;
+        // TODO: faster deep-copy implementation
+        let crop = this.customCopyBuffer(raw.arrayBuffer);
+        const dataToEmit = {
+            image: {
+                width: raw.width,
+                height: raw.height,
+                channels: 3,
+                buffer: crop
+            },
+            ts: performance.now(),
+            product: {
+                product_id: "a"
+            }
+        }
+        // console.log(`sending frame length ${crop.byteLength}, w=${raw.width}, h=${raw.height}`);
+        this.sioClient.emit('det', dataToEmit);        
+      });
+    }
+
+    getCurrentResult() {
+        return this.currentResult;
+    }
+
+    resetCurrentResult() {
+        this.currentResult = { authentic: false, meta: { score: -1.0 }};
+    }
+
+}
+class AssetsManager {
+    constructor() { }
+    
+    static getInstance() {
+        if (!AssetsManager.instance) {
+            AssetsManager.instance = new AssetsManager();
+        }
+        return AssetsManager.instance;
+    }
+    
+    getDetectionContext(gtin) {
+        // TODO: call dedicated asset endpoint
+        console.log(gtin);
+        const cw = 256;
+        const ch = 256;
+        const ctx = {
+            roi: {
+                x: Math.round((1080 - cw) / 2),
+                y: Math.round((1920 - ch) / 2 - ch),
+                w: cw,
+                h: ch
+            }
+        };
+        return ctx;
+    }
+}
+
+
+
 class AuthFeatureError {
     code = 0;
     message = undefined;
@@ -94,6 +209,9 @@ const getBatchInfo = function(gtin, batchNumber,  callback){
 
 export default class HomeController extends WebcController{
     uiElements = {};
+    detectionContext = {};
+    cameraRunning = false;
+
 
     constructor(element, history, ...args) {
         super(element, history, ...args);
@@ -112,7 +230,7 @@ export default class HomeController extends WebcController{
         })
 
         this.onTagClick('abort', () => {
-            this.abortPackAuthentication();
+            this.abortPackAuthentication("Authentication Aborted");
         })
 
         getProductInfo(gs1Data.gtin, (err, product) => {
@@ -134,7 +252,16 @@ export default class HomeController extends WebcController{
     }
 
     authenticatePack() {
-        this.nativeCameraConfig = new PLCameraConfig('hd1920x1080', 'torch', true, true);
+        this.nativeCameraConfig = {
+            sessionPreset: "hd1920x1080",
+            flashConfiguration: "torch",
+            continuousFocus: true,
+            autoOrientationEnabled: false,
+            deviceTypes: ["wideAngleCamera"],
+            cameraPosition: "back",
+            highResolutionCaptureEnabled: true,
+            initOrientation: "portrait"
+        };
         nativeBridge.startNativeCameraWithConfig(
             this.nativeCameraConfig,
             undefined,
@@ -143,7 +270,10 @@ export default class HomeController extends WebcController{
             undefined,
             10,
             () => {
+                this.cameraRunning = true;
                 this.uiElements.streamPreview.src = `${window.Native.Camera.cameraProps._serverUrl}/mjpeg`;
+                this.detectionContext = AssetsManager.getInstance().getDetectionContext(this.model.gs1Data.gtin);
+                this.iterativeDetections();
             },
             undefined,
             undefined,
@@ -152,15 +282,26 @@ export default class HomeController extends WebcController{
             false);
     }
 
-    abortPackAuthentication() {
+    iterativeDetections() {
+        RemoteDetection.getInstance().authenticate(this.detectionContext);
+        let currentResult = RemoteDetection.getInstance().getCurrentResult();
+        if (currentResult.authentic) {
+            this.cameraRunning = false
+            nativeBridge.stopNativeCamera();
+            alert(`score: ${currentResult.meta.score}`)
+            this.report(true, undefined);
+        } else if (this.cameraRunning) {
+            console.log(`Should redo detection`);
+            setTimeout(() => {
+                this.iterativeDetections();
+            }, 100); 
+        }
+    }
+
+    abortPackAuthentication(reason) {
+        this.cameraRunning = false;
         nativeBridge.stopNativeCamera();
-        const authResponse = new AuthFeatureResponse(false, "Authentication Aborted");
-        const event = new CustomEvent('ssapp-action', {
-            bubbles: true,
-            cancelable: true,
-            detail: authResponse
-        });
-        this.element.dispatchEvent(event); 
+        this.report(false, reason);
     }
 
     async verifyPack(){
