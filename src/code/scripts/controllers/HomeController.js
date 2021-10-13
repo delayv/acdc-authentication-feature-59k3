@@ -179,7 +179,7 @@ export default class HomeController extends WebcController{
     constructor(element, history, ...args) {
         super(element, history, ...args);
         this._bindElements();
-        this.endpoint = "https://a.2001u1.com/api/v1";
+        this.endpoint = "https://a.2001u1.com/api/v1/detectioncontext";
         this.token = "{token_here}";
         this.sioEndpoint = "wss://d.2001u1.com";
         this.sioToken = '{token_here}'
