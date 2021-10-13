@@ -4,7 +4,7 @@ const {WebcController} = WebCardinal.controllers;
 const {constants, PLCameraConfig, nativeBridge, imageTypes} = window.Native.Camera;
 
 class RemoteDetection {
-    constructor() {
+    constructor(sioEndpoint, preshared_jwt_token) {
         this.currentResult = {
             authentic: false,
             meta: {
@@ -12,8 +12,8 @@ class RemoteDetection {
             }
         };
         ////////////
-        this.sioEndpoint = "wss://d.2001u1.com";
-        this.preshared_jwt_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NDE0MjQwNTcsImlhdCI6MTYzMzY0ODA1NywiYXVkIjoidXJuOnBsIn0.urejtI30oJC-_MWh0Jrspd6IS0geV5Cuzzjn_0nqPR4'
+        this.sioEndpoint = sioEndpoint;
+        this.preshared_jwt_token = preshared_jwt_token;
         this.sioClient = io(this.sioEndpoint, {
             onlyBinaryUpgrades: true,
             reconnectionAttempts: 10,
@@ -40,34 +40,12 @@ class RemoteDetection {
         });
     }
 
-    static getInstance() {
-      if (!RemoteDetection.instance) {
-        RemoteDetection.instance = new RemoteDetection();
-      }
-      return RemoteDetection.instance;
-    }
-
-    customCopyBuffer(buffer)
-    {
-        var bytes = new Uint8Array(buffer);
-        var output = new ArrayBuffer(buffer.byteLength);
-        var outputBytes = new Uint8Array(output);
-        for (var i = 0; i < bytes.length; i++)
-            outputBytes[i] = bytes[i];
-        return output;
-    }
-
-    authenticate(context) {
-      nativeBridge.getRawFrame(context.roi.x, context.roi.y, context.roi.w, context.roi.h).then(raw => {
-        // let rndVals = new Uint8Array(Array.from({length: 3*256*256}, () => Math.floor(Math.random() * 256)))
-        // let crop = rndVals.buffer;
-        // TODO: faster deep-copy implementation
-        let crop = this.customCopyBuffer(raw.arrayBuffer);
+    authenticate(crop, width, height, channels) {
         const dataToEmit = {
             image: {
-                width: raw.width,
-                height: raw.height,
-                channels: 3,
+                width: width,
+                height: height,
+                channels: channels,
                 buffer: crop
             },
             ts: performance.now(),
@@ -77,7 +55,10 @@ class RemoteDetection {
         }
         // console.log(`sending frame length ${crop.byteLength}, w=${raw.width}, h=${raw.height}`);
         this.sioClient.emit('det', dataToEmit);        
-      });
+    }
+
+    setSioEndpoint(endpoint) {
+        this.sioEndpoint 
     }
 
     getCurrentResult() {
@@ -89,34 +70,6 @@ class RemoteDetection {
     }
 
 }
-class AssetsManager {
-    constructor() { }
-    
-    static getInstance() {
-        if (!AssetsManager.instance) {
-            AssetsManager.instance = new AssetsManager();
-        }
-        return AssetsManager.instance;
-    }
-    
-    getDetectionContext(gtin) {
-        // TODO: call dedicated asset endpoint
-        console.log(gtin);
-        const cw = 256;
-        const ch = 256;
-        const ctx = {
-            roi: {
-                x: Math.round((1080 - cw) / 2),
-                y: Math.round((1920 - ch) / 2 - ch),
-                w: cw,
-                h: ch
-            }
-        };
-        return ctx;
-    }
-}
-
-
 
 class AuthFeatureError {
     code = 0;
@@ -141,6 +94,16 @@ class AuthFeatureResponse  {
         this.status = status;
         this.error = error ? new AuthFeatureError(error) : undefined;
     }
+}
+
+function customCopyBuffer(buffer)
+{
+    var bytes = new Uint8Array(buffer);
+    var output = new ArrayBuffer(buffer.byteLength);
+    var outputBytes = new Uint8Array(output);
+    for (var i = 0; i < bytes.length; i++)
+        outputBytes[i] = bytes[i];
+    return output;
 }
 
 /**
@@ -216,6 +179,12 @@ export default class HomeController extends WebcController{
     constructor(element, history, ...args) {
         super(element, history, ...args);
         this._bindElements();
+        this.endpoint = "https://a.2001u1.com/api/v1";
+        this.token = "{token_here}";
+        this.sioEndpoint = "wss://d.2001u1.com";
+        this.sioToken = '{token_here}'
+        this.remoteDetection = undefined;
+        
 
         const gs1Data = getQueryStringParams();
         this.model.gs1Data = gs1Data;
@@ -234,17 +203,44 @@ export default class HomeController extends WebcController{
         })
 
         getProductInfo(gs1Data.gtin, (err, product) => {
-            if (err)
+            if (err) {
                 console.log(`Could not read product info`, err);
-            else
+                this.report(false, `Could not read product info`);
+            }
+            else {
                 self.model.product = product;
-            getBatchInfo(gs1Data.gtin, gs1Data.batchNumber, (err, batch) => {
-                if (err)
-                    console.log(`Could not read batch data`, err);
-                else
-                    self.model.batch = batch;
-            });
+                getBatchInfo(gs1Data.gtin, gs1Data.batchNumber, (err, batch) => {
+                    if (err)
+                        console.log(`Could not read batch data`, err);
+                    else
+                        self.model.batch = batch;
+                });
+                this.getDetectionContext(this.model.gs1Data, this.model.product).then(fullDetectionContext => {
+                    this.fullDetectionContext = fullDetectionContext
+                    this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint || this.sioEndpoint, this.sioToken);
+                });
+            }
         });
+    }
+
+    async getDetectionContext(gs1Data, product) {
+        const productClientInfo = { 
+            ...gs1Data, 
+            ...{name: product.name}, ...{version: product.version}, ...{description: product.description}, ...{manufName: product.manufName} };
+        const clientInfo = {product: productClientInfo};
+        // cannot get deviceInfo at this stage because camera has not started. 
+        //   TODO: adapt native wrapper or fine-tune detectionContext w/r to device when camera is running
+        //         left as an enhancement for future version
+        let response = await fetch(this.endpoint, { 
+            method: 'post', 
+            headers: new Headers({
+              'Authorization': 'bearer ' + this.token, 
+              'Content-Type': 'application/json'
+            }), 
+            body: JSON.stringify(clientInfo)
+        });
+        let fullDetectionContext = await response.json();
+        return fullDetectionContext;
     }
 
     _bindElements() {
@@ -252,18 +248,8 @@ export default class HomeController extends WebcController{
     }
 
     authenticatePack() {
-        this.nativeCameraConfig = {
-            sessionPreset: "hd1920x1080",
-            flashConfiguration: "torch",
-            continuousFocus: true,
-            autoOrientationEnabled: false,
-            deviceTypes: ["wideAngleCamera"],
-            cameraPosition: "back",
-            highResolutionCaptureEnabled: true,
-            initOrientation: "portrait"
-        };
         nativeBridge.startNativeCameraWithConfig(
-            this.nativeCameraConfig,
+            this.fullDetectionContext.cameraConfiguration, //this.nativeCameraConfig,
             undefined,
             25,
             640,
@@ -272,7 +258,6 @@ export default class HomeController extends WebcController{
             () => {
                 this.cameraRunning = true;
                 this.uiElements.streamPreview.src = `${window.Native.Camera.cameraProps._serverUrl}/mjpeg`;
-                this.detectionContext = AssetsManager.getInstance().getDetectionContext(this.model.gs1Data.gtin);
                 this.iterativeDetections();
             },
             undefined,
@@ -283,18 +268,27 @@ export default class HomeController extends WebcController{
     }
 
     iterativeDetections() {
-        RemoteDetection.getInstance().authenticate(this.detectionContext);
-        let currentResult = RemoteDetection.getInstance().getCurrentResult();
-        if (currentResult.authentic) {
-            this.cameraRunning = false
-            nativeBridge.stopNativeCamera();
-            alert(`score: ${currentResult.meta.score}`)
-            this.report(true, undefined);
-        } else if (this.cameraRunning) {
-            console.log(`Should redo detection`);
-            setTimeout(() => {
-                this.iterativeDetections();
-            }, 100); 
+        for (const roi of this.fullDetectionContext.rois) {
+            // TODO: switch to gray crop w/r to nbr of channels
+            nativeBridge.getRawFrame(roi.x, roi.y, roi.w, roi.h).then(raw => {
+                // let rndVals = new Uint8Array(Array.from({length: 3*256*256}, () => Math.floor(Math.random() * 256)))
+                // let crop = rndVals.buffer;
+                // TODO: faster deep-copy implementation
+                let crop = customCopyBuffer(raw.arrayBuffer);
+                this.remoteDetection.authenticate(crop, roi.w, roi.h, roi.channels);
+                let currentResult = this.remoteDetection.getCurrentResult();
+                if (currentResult.authentic) {
+                    this.cameraRunning = false
+                    nativeBridge.stopNativeCamera();
+                    alert(`score: ${currentResult.meta.score}`)
+                    this.report(true, undefined);
+                } else if (this.cameraRunning) {
+                    // console.log(`Should redo detection`);
+                    setTimeout(() => {
+                        this.iterativeDetections();
+                    }, 100); 
+                }
+            });
         }
     }
 
