@@ -218,6 +218,8 @@ export default class HomeController extends WebcController{
                 this.getDetectionContext(this.model.gs1Data, this.model.product).then(fullDetectionContext => {
                     this.fullDetectionContext = fullDetectionContext
                     this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint || this.sioEndpoint, this.sioToken);
+                    const overlayStr = `data:image/png;base64, ${this.fullDetectionContext.overlayBase64}`;
+                    this.uiElements.overlay.src = overlayStr;
                 });
             }
         });
@@ -245,6 +247,7 @@ export default class HomeController extends WebcController{
 
     _bindElements() {
         this.uiElements.streamPreview = this.element.querySelector('#streamPreview');
+        this.uiElements.overlay = this.element.querySelector('#overlay');
     }
 
     authenticatePack() {
