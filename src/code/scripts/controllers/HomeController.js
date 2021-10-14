@@ -188,10 +188,7 @@ export default class HomeController extends WebcController{
 
         const gs1Data = getQueryStringParams();
         this.model.gs1Data = gs1Data;
-        this.barcodeScannerController = this.element.querySelector('pdm-barcode-scanner-controller');
         const self = this;
-
-        this.onTagClick('scan', self.verifyPack.bind(self));
 
         this.onTagClick('auth', () => {
             // this.navigateToPageTag('auth');
@@ -299,54 +296,6 @@ export default class HomeController extends WebcController{
         this.cameraRunning = false;
         nativeBridge.stopNativeCamera();
         this.report(false, reason);
-    }
-
-    async verifyPack(){
-        const self = this;
-
-        const showError = function(error){
-            self.showErrorModal("Authentication Feature", error.message || error);
-        }
-
-        await self.scanCode((err, scanData) => {
-            if (err)
-                return showError(`Could not scan Pack`);
-            if (!scanData)
-                return console.log(`No data scanned`);
-            const isValid = self.verify(scanData);
-            self.report(isValid, isValid ? undefined : "Package is not valid");
-        });
-    }
-
-    async scanCode(callback){
-        const self = this;
-        await self.barcodeScannerController.present((err, scanData) => err
-                ? callback(err)
-                : callback(undefined, scanData ? self.parseScanData(scanData.result) : scanData));
-    }
-
-    parseScanData(result){
-        const interpretedData = interpretGS1scan.interpretScan(result);
-        const data = interpretedData.AIbrackets.split(/\(\d{1,2}\)/g);
-        result = {
-            gtin: data[1],
-            expiry: data[2],
-            batchNumber: data[3],
-            serialNumber: data[4]
-        }
-        return result;
-    }
-
-    verify(scanData){
-        const self = this;
-        return Object.keys(scanData).every(key => {
-            if (key === 'expiry'){
-                const dateA = new Date(scanData[key].replace(/(\d{2})(\d{2})(\d{2})/g,'$2/$3/$1')).getTime();
-                const dateB = new Date(self.model.gs1Data[key].replaceAll(" - ", "/")).getTime();
-                return dateA === dateB;
-            }
-            return scanData[key] === self.model.gs1Data[key];
-        });
     }
 
     report(status, error){
