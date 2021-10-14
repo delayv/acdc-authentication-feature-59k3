@@ -184,6 +184,7 @@ export default class HomeController extends WebcController{
         this.sioEndpoint = "wss://d.2001u1.com";
         this.sioToken = '{token_here}'
         this.remoteDetection = undefined;
+        this.productClientInfo = undefined;
         
 
         const gs1Data = getQueryStringParams();
