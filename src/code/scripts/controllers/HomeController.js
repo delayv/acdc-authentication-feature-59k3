@@ -212,24 +212,28 @@ export default class HomeController extends WebcController{
                     else
                         self.model.batch = batch;
                 });
-                this.getDetectionContext(this.model.gs1Data, this.model.product).then(fullDetectionContext => {
+                // cannot get deviceInfo at this stage because camera has not started. 
+                //   TODO: adapt native wrapper
+                //         left as an enhancement for future version. For now we re-get fullDetectionContext after camera has started so we can add deviceInfo in request body 
+                this.productClientInfo = { 
+                    ...gs1Data, 
+                    ...{name: product.name}, ...{version: product.version}, ...{description: product.description}, ...{manufName: product.manufName} };
+                const clientInfo = {product: this.productClientInfo};   
+                this.getDetectionContext(clientInfo).then(fullDetectionContext => {
                     this.fullDetectionContext = fullDetectionContext
                     this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint || this.sioEndpoint, this.sioToken);
                     const overlayStr = `data:image/png;base64, ${this.fullDetectionContext.overlayBase64}`;
                     this.uiElements.overlay.src = overlayStr;
+                    // start the camera, but without torch to have a nice UX
+                    var cameraConfigForStartup = {...this.fullDetectionContext.cameraConfiguration};
+                    cameraConfigForStartup.flashConfiguration = "off";
+                    this.startCamera(cameraConfigForStartup);
                 });
             }
         });
     }
 
-    async getDetectionContext(gs1Data, product) {
-        const productClientInfo = { 
-            ...gs1Data, 
-            ...{name: product.name}, ...{version: product.version}, ...{description: product.description}, ...{manufName: product.manufName} };
-        const clientInfo = {product: productClientInfo};
-        // cannot get deviceInfo at this stage because camera has not started. 
-        //   TODO: adapt native wrapper or fine-tune detectionContext w/r to device when camera is running
-        //         left as an enhancement for future version
+    async getDetectionContext(clientInfo) {
         let response = await fetch(this.endpoint, { 
             method: 'post', 
             headers: new Headers({
@@ -247,9 +251,9 @@ export default class HomeController extends WebcController{
         this.uiElements.overlay = this.element.querySelector('#overlay');
     }
 
-    authenticatePack() {
+    startCamera(config) {
         nativeBridge.startNativeCameraWithConfig(
-            this.fullDetectionContext.cameraConfiguration, //this.nativeCameraConfig,
+            config,
             undefined,
             25,
             640,
@@ -258,13 +262,30 @@ export default class HomeController extends WebcController{
             () => {
                 this.cameraRunning = true;
                 this.uiElements.streamPreview.src = `${window.Native.Camera.cameraProps._serverUrl}/mjpeg`;
-                this.iterativeDetections();
+                // re-get fullDetectionContext adapted to available deviceInfo (see TODO in constructor)
+                nativeBridge.getDeviceInfo().then(di => {
+                    this.deviceInfo = di;
+                    const clientInfo = {
+                        product: this.productClientInfo,
+                        deviceInfo: this.deviceInfo 
+                    }
+                    this.getDetectionContext(clientInfo).then(fullDetectionContext => {
+                        this.fullDetectionContext = fullDetectionContext
+                    });
+                })
             },
             undefined,
             undefined,
             undefined,
             undefined,
             false);
+    }
+
+    authenticatePack() {
+        if (this.fullDetectionContext.cameraConfiguration.flashConfiguration !== "off") {
+            nativeBridge.setFlashModeNativeCamera(this.fullDetectionContext.cameraConfiguration.flashConfiguration);
+        }
+        this.iterativeDetections();
     }
 
     iterativeDetections() {
