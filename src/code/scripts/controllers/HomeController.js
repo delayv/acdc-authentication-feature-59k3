@@ -291,18 +291,29 @@ export default class HomeController extends WebcController{
 
     iterativeDetections() {
         for (const roi of this.fullDetectionContext.rois) {
+            var getFrameFct = undefined;
+            if (roi.channels === 1) {
+                getFrameFct = nativeBridge.getRawFrameYCbCr;
+            } else {
+                getFrameFct = nativeBridge.getRawFrame
+            }
             // TODO: switch to gray crop w/r to nbr of channels
-            nativeBridge.getRawFrame(roi.x, roi.y, roi.w, roi.h).then(raw => {
+            getFrameFct(roi.x, roi.y, roi.w, roi.h).then(raw => {
+                var crop = undefined;
                 // let rndVals = new Uint8Array(Array.from({length: 3*256*256}, () => Math.floor(Math.random() * 256)))
                 // let crop = rndVals.buffer;
                 // TODO: faster deep-copy implementation
-                let crop = customCopyBuffer(raw.arrayBuffer);
+                if (roi.channels === 1) {
+                    crop = customCopyBuffer(raw.yArrayBuffer) // because we got a PLYCbCrImage
+                } else {
+                    crop = customCopyBuffer(raw.arrayBuffer);
+                }
                 this.remoteDetection.authenticate(crop, roi.w, roi.h, roi.channels);
                 let currentResult = this.remoteDetection.getCurrentResult();
                 if (currentResult.authentic) {
                     this.cameraRunning = false
                     nativeBridge.stopNativeCamera();
-                    alert(`Authentic product`)
+                    alert(`Authentication feature found`)
                     this.report(true, undefined);
                 } else if (this.cameraRunning) {
                     // console.log(`Should redo detection`);
