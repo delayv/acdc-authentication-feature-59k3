@@ -302,7 +302,7 @@ export default class HomeController extends WebcController{
                 if (currentResult.authentic) {
                     this.cameraRunning = false
                     nativeBridge.stopNativeCamera();
-                    alert(`score: ${currentResult.meta.score}`)
+                    alert(`Authentic product`)
                     this.report(true, undefined);
                 } else if (this.cameraRunning) {
                     // console.log(`Should redo detection`);
