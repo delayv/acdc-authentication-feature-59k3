@@ -172,7 +172,6 @@ const getBatchInfo = function(gtin, batchNumber,  callback){
 
 export default class HomeController extends WebcController{
     uiElements = {};
-    detectionContext = {};
     cameraRunning = false;
 
 
@@ -185,6 +184,14 @@ export default class HomeController extends WebcController{
         this.sioToken = '{token_here}'
         this.remoteDetection = undefined;
         this.productClientInfo = undefined;
+        this.defaultTimeout = undefined;
+        this.errorCodes = {
+            ABORTED: {error: 101, message: "Aborted"},
+            TIMEOUT: {error: 102, message: "Timeout"},
+            NO_PRODUCT_INFO: {error: 103, message: `Could not read product info`},
+            NO_BATCH_INFO: {error: 104, message: `Could not read batch data`}
+        };
+        this.authenticationFeatureFoundMessage = "Feature Found";
         
 
         const gs1Data = getQueryStringParams();
@@ -197,19 +204,21 @@ export default class HomeController extends WebcController{
         })
 
         this.onTagClick('abort', () => {
-            this.abortPackAuthentication("Authentication Aborted");
+            this.abortPackAuthentication(this.errorCodes.ABORTED);
         })
 
         getProductInfo(gs1Data.gtin, (err, product) => {
             if (err) {
                 console.log(`Could not read product info`, err);
-                this.report(false, `Could not read product info`);
+                this.report(false, this.errorCodes.NO_PRODUCT_INFO);
             }
             else {
                 self.model.product = product;
                 getBatchInfo(gs1Data.gtin, gs1Data.batchNumber, (err, batch) => {
-                    if (err)
+                    if (err) {
                         console.log(`Could not read batch data`, err);
+                        this.report(false, this.errorCodes.NO_BATCH_INFO);
+                    }
                     else
                         self.model.batch = batch;
                 });
@@ -272,6 +281,18 @@ export default class HomeController extends WebcController{
                     }
                     this.getDetectionContext(clientInfo).then(fullDetectionContext => {
                         this.fullDetectionContext = fullDetectionContext
+                        if (!this.fullDetectionContext.timeout) {
+                            this.fullDetectionContext.timeout = this.default_timeout;
+                        }
+                        if (this.fullDetectionContext.authenticMessage) {
+                            this.authenticationFeatureFoundMessage = this.fullDetectionContext.authenticMessage;
+                        }
+                        if (this.fullDetectionContext.timeoutMessage) {
+                            this.errorCodes.TIMEOUT.message = this.fullDetectionContext.timeoutMessage;
+                        }
+                        if (this.fullDetectionContext.abortedMessage) {
+                            this.errorCodes.ABORTED.message = this.fullDetectionContext.abortedMessage;
+                        }
                     });
                 })
             },
@@ -287,6 +308,11 @@ export default class HomeController extends WebcController{
             nativeBridge.setFlashModeNativeCamera(this.fullDetectionContext.cameraConfiguration.flashConfiguration);
         }
         this.iterativeDetections();
+        if (this.fullDetectionContext.timeout) {
+            setTimeout(() => {
+                this.abortPackAuthentication(this.errorCodes.TIMEOUT)
+            }, 1000.0*this.fullDetectionContext.timeout);
+        }
     }
 
     iterativeDetections() {
@@ -313,7 +339,8 @@ export default class HomeController extends WebcController{
                 if (currentResult.authentic) {
                     this.cameraRunning = false
                     nativeBridge.stopNativeCamera();
-                    alert(`Authentication feature found`)
+                    const message = this.authenticationFeatureFoundMessage;
+                    alert(message);
                     this.report(true, undefined);
                 } else if (this.cameraRunning) {
                     // console.log(`Should redo detection`);
@@ -325,10 +352,13 @@ export default class HomeController extends WebcController{
         }
     }
 
-    abortPackAuthentication(reason) {
+    /**
+     * @param  {errorCode} error one of errorCodes defined
+     */
+    abortPackAuthentication(error) {
         this.cameraRunning = false;
         nativeBridge.stopNativeCamera();
-        this.report(false, reason);
+        this.report(false, error);
     }
 
     report(status, error){
