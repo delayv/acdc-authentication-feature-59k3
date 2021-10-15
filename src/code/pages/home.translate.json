@@ -8,7 +8,7 @@
     "expiry": "Expiration Date:"
   },
   "buttons": {
-    "scan": "Scan",
-    "auth": "Auth"
+    "auth": "Start",
+    "abort": "Abort"
   }
 }
