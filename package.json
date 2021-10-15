@@ -27,5 +27,8 @@
     "ssapp"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/PharmaLedger-IMI/acdc-authentication-feature-template"
+  "homepage": "https://github.com/PharmaLedger-IMI/acdc-authentication-feature-template",
+  "dependencies": {
+    "socket.io-client": "^4.3.0"
+  }
 }

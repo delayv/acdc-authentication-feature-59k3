@@ -125,6 +125,20 @@
           }
         }
       ]
+    },
+    {
+      "name": "Copy socket.io-client",
+      "src": "",
+      "actions": [
+        {
+          "type": "copy",
+          "src": "./node_modules/socket.io-client/dist/socket.io.msgpack.min.js",
+          "target": "./src/code/socket.io.msgpack.min.js",
+          "options": {
+            "overwrite": true
+          }
+        }
+      ]
     }
   ],
   "postbuild": []
