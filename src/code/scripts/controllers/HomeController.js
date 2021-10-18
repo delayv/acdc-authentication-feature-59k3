@@ -4,13 +4,7 @@ const {WebcController} = WebCardinal.controllers;
 const {constants, PLCameraConfig, nativeBridge, imageTypes} = window.Native.Camera;
 
 class RemoteDetection {
-    constructor(sioEndpoint, preshared_jwt_token) {
-        this.currentResult = {
-            authentic: false,
-            meta: {
-                score: -1.0
-            }
-        };
+    constructor(sioEndpoint, preshared_jwt_token, onResultReceived) {
         ////////////
         this.sioEndpoint = sioEndpoint;
         this.preshared_jwt_token = preshared_jwt_token;
@@ -33,11 +27,13 @@ class RemoteDetection {
             // console.log('disconnected from the server');
         });
 
-
+        this.onResultReceivedCallback = onResultReceived;
         this.sioClient.on('detResp', detResult => {
             // console.log(`client ${this.sioClient.id} received %o`, detResult);
-            this.currentResult = detResult;
+            this.onResultReceivedCallback(detResult);
         });
+
+
     }
 
     authenticate(crop, width, height, channels) {
@@ -55,18 +51,6 @@ class RemoteDetection {
         }
         // console.log(`sending frame length ${crop.byteLength}, w=${raw.width}, h=${raw.height}`);
         this.sioClient.emit('det', dataToEmit);        
-    }
-
-    setSioEndpoint(endpoint) {
-        this.sioEndpoint 
-    }
-
-    getCurrentResult() {
-        return this.currentResult;
-    }
-
-    resetCurrentResult() {
-        this.currentResult = { authentic: false, meta: { score: -1.0 }};
     }
 
 }
@@ -231,7 +215,19 @@ export default class HomeController extends WebcController{
                 const clientInfo = {product: this.productClientInfo};   
                 this.getDetectionContext(clientInfo).then(fullDetectionContext => {
                     this.fullDetectionContext = fullDetectionContext
-                    this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint || this.sioEndpoint, this.sioToken);
+                    this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint || this.sioEndpoint, this.sioToken, (detResult) => {
+                        let currentResult = detResult
+                        if (currentResult.authentic) {
+                            this.cameraRunning = false
+                            nativeBridge.stopNativeCamera();
+                            const message = this.authenticationFeatureFoundMessage;
+                            alert(message);
+                            this.report(true, undefined);
+                        } else if (this.cameraRunning) {
+                            // console.log(`Should redo detection`);
+                            this.iterativeDetections();
+                        }
+                    });
                     const overlayStr = `data:image/png;base64, ${this.fullDetectionContext.overlayBase64}`;
                     this.uiElements.overlay.src = overlayStr;
                     // start the camera, but without torch to have a nice UX
@@ -323,7 +319,6 @@ export default class HomeController extends WebcController{
             } else {
                 getFrameFct = nativeBridge.getRawFrame
             }
-            // TODO: switch to gray crop w/r to nbr of channels
             getFrameFct(roi.x, roi.y, roi.w, roi.h).then(raw => {
                 var crop = undefined;
                 // let rndVals = new Uint8Array(Array.from({length: 3*256*256}, () => Math.floor(Math.random() * 256)))
@@ -335,19 +330,6 @@ export default class HomeController extends WebcController{
                     crop = customCopyBuffer(raw.arrayBuffer);
                 }
                 this.remoteDetection.authenticate(crop, roi.w, roi.h, roi.channels);
-                let currentResult = this.remoteDetection.getCurrentResult();
-                if (currentResult.authentic) {
-                    this.cameraRunning = false
-                    nativeBridge.stopNativeCamera();
-                    const message = this.authenticationFeatureFoundMessage;
-                    alert(message);
-                    this.report(true, undefined);
-                } else if (this.cameraRunning) {
-                    // console.log(`Should redo detection`);
-                    setTimeout(() => {
-                        this.iterativeDetections();
-                    }, 100); 
-                }
             });
         }
     }
