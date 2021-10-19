@@ -176,7 +176,7 @@ export default class HomeController extends WebcController{
             NO_BATCH_INFO: {error: 104, message: `Could not read batch data`}
         };
         this.authenticationFeatureFoundMessage = "Feature Found";
-        
+        this.roiId = 0;
 
         const gs1Data = getQueryStringParams();
         this.model.gs1Data = gs1Data;
@@ -225,6 +225,7 @@ export default class HomeController extends WebcController{
                             this.report(true, undefined);
                         } else if (this.cameraRunning) {
                             // console.log(`Should redo detection`);
+                            this.roiId = (this.roiId+1)%this.fullDetectionContext.rois.length;
                             this.iterativeDetections();
                         }
                     });
@@ -312,26 +313,26 @@ export default class HomeController extends WebcController{
     }
 
     iterativeDetections() {
-        for (const roi of this.fullDetectionContext.rois) {
-            var getFrameFct = undefined;
-            if (roi.channels === 1) {
-                getFrameFct = nativeBridge.getRawFrameYCbCr;
-            } else {
-                getFrameFct = nativeBridge.getRawFrame
-            }
-            getFrameFct(roi.x, roi.y, roi.w, roi.h).then(raw => {
-                var crop = undefined;
-                // let rndVals = new Uint8Array(Array.from({length: 3*256*256}, () => Math.floor(Math.random() * 256)))
-                // let crop = rndVals.buffer;
-                // TODO: faster deep-copy implementation
-                if (roi.channels === 1) {
-                    crop = customCopyBuffer(raw.yArrayBuffer) // because we got a PLYCbCrImage
-                } else {
-                    crop = customCopyBuffer(raw.arrayBuffer);
-                }
-                this.remoteDetection.authenticate(crop, roi.w, roi.h, roi.channels);
-            });
+        const roi = this.fullDetectionContext.rois[this.roiId];
+        console.log(`roi_${this.roiId}: (${roi.x}, ${roi.y}, ${roi.w}, ${roi.h})`);
+        var getFrameFct = undefined;
+        if (roi.channels === 1) {
+            getFrameFct = nativeBridge.getRawFrameYCbCr;
+        } else {
+            getFrameFct = nativeBridge.getRawFrame
         }
+        getFrameFct(roi.x, roi.y, roi.w, roi.h).then(raw => {
+            var crop = undefined;
+            // let rndVals = new Uint8Array(Array.from({length: 3*256*256}, () => Math.floor(Math.random() * 256)))
+            // let crop = rndVals.buffer;
+            // TODO: faster deep-copy implementation
+            if (roi.channels === 1) {
+                crop = customCopyBuffer(raw.yArrayBuffer) // because we got a PLYCbCrImage
+            } else {
+                crop = customCopyBuffer(raw.arrayBuffer);
+            }
+            this.remoteDetection.authenticate(crop, roi.w, roi.h, roi.channels);
+        });
     }
 
     /**
