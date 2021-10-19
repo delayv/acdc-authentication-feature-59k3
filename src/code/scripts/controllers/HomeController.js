@@ -184,6 +184,8 @@ export default class HomeController extends WebcController{
 
         this.onTagClick('auth', () => {
             // this.navigateToPageTag('auth');
+            document.getElementById("auth_start").hidden = true;
+            document.getElementById("auth_abort").hidden = false;
             this.authenticatePack();
         })
 
