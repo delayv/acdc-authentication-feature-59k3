@@ -214,45 +214,65 @@ export default class HomeController extends WebcController{
                 this.productClientInfo = { 
                     ...gs1Data, 
                     ...{name: product.name}, ...{version: product.version}, ...{description: product.description}, ...{manufName: product.manufName} };
-                const clientInfo = {product: this.productClientInfo};   
-                this.getDetectionContext(clientInfo).then(fullDetectionContext => {
-                    this.fullDetectionContext = fullDetectionContext
-                    this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint || this.sioEndpoint, this.sioToken, (detResult) => {
-                        let currentResult = detResult
-                        if (currentResult.authentic) {
-                            this.cameraRunning = false
-                            nativeBridge.stopNativeCamera();
-                            const message = this.authenticationFeatureFoundMessage;
-                            alert(message);
-                            this.report(true, undefined);
-                        } else if (this.cameraRunning) {
-                            // console.log(`Should redo detection`);
-                            this.roiId = (this.roiId+1)%this.fullDetectionContext.rois.length;
-                            this.iterativeDetections();
-                        }
-                    });
-                    const overlayStr = `data:image/png;base64, ${this.fullDetectionContext.overlayBase64}`;
-                    this.uiElements.overlay.src = overlayStr;
-                    // start the camera, but without torch to have a nice UX
-                    var cameraConfigForStartup = {...this.fullDetectionContext.cameraConfiguration};
-                    cameraConfigForStartup.flashConfiguration = "off";
-                    this.startCamera(cameraConfigForStartup);
-                });
+                this.startup();
             }
         });
     }
 
-    async getDetectionContext(clientInfo) {
-        let response = await fetch(this.endpoint, { 
+    startup() {
+        const clientInfo = {product: this.productClientInfo};   
+        this.getDetectionContext(clientInfo).then(fullDetectionContext => {
+            this.fullDetectionContext = fullDetectionContext
+            this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint || this.sioEndpoint, this.sioToken, (detResult) => {
+                let currentResult = detResult
+                if (currentResult.authentic) {
+                    this.cameraRunning = false
+                    nativeBridge.stopNativeCamera();
+                    const message = this.authenticationFeatureFoundMessage;
+                    alert(message);
+                    this.report(true, undefined);
+                } else if (this.cameraRunning) {
+                    // console.log(`Should redo detection`);
+                    this.roiId = (this.roiId+1)%this.fullDetectionContext.rois.length;
+                    this.iterativeDetections();
+                }
+            });
+            const overlayStr = `data:image/png;base64, ${this.fullDetectionContext.overlayBase64}`;
+            this.uiElements.overlay.src = overlayStr;
+            // start the camera, but without torch to have a nice UX
+            var cameraConfigForStartup = {...this.fullDetectionContext.cameraConfiguration};
+            cameraConfigForStartup.flashConfiguration = "off";
+            this.startCamera(cameraConfigForStartup);
+        });
+    }
+    
+
+    getDetectionContext(clientInfo) {
+        return fetch(this.endpoint, { 
             method: 'post', 
             headers: new Headers({
               'Authorization': 'bearer ' + this.token, 
               'Content-Type': 'application/json'
             }), 
             body: JSON.stringify(clientInfo)
-        });
-        let fullDetectionContext = await response.json();
-        return fullDetectionContext;
+        }).then((response) => {
+            if (response.status >= 400 && response.status < 600) {
+                throw new Error("Bad response from server");
+            }
+            return response; 
+        }).then((response) => {
+            return response.json().then((context) => {
+                if (context === undefined) {
+                    alert('Cannot deserialize response to valid context');
+                    document.getElementById("auth_abort").hidden = false;
+                }
+                return context;
+            })
+        }).catch((error) => {
+            console.log(error);
+            alert('Network error contacting api verify connection and retry');
+            document.getElementById("auth_abort").hidden = false;
+        })
     }
 
     _bindElements() {
@@ -279,18 +299,24 @@ export default class HomeController extends WebcController{
                         deviceInfo: this.deviceInfo 
                     }
                     this.getDetectionContext(clientInfo).then(fullDetectionContext => {
-                        this.fullDetectionContext = fullDetectionContext
-                        if (!this.fullDetectionContext.timeout) {
-                            this.fullDetectionContext.timeout = this.default_timeout;
-                        }
-                        if (this.fullDetectionContext.authenticMessage) {
-                            this.authenticationFeatureFoundMessage = this.fullDetectionContext.authenticMessage;
-                        }
-                        if (this.fullDetectionContext.timeoutMessage) {
-                            this.errorCodes.TIMEOUT.message = this.fullDetectionContext.timeoutMessage;
-                        }
-                        if (this.fullDetectionContext.abortedMessage) {
-                            this.errorCodes.ABORTED.message = this.fullDetectionContext.abortedMessage;
+                        if (fullDetectionContext === undefined) {
+                            alert("Context is not retrieved");
+                            document.getElementById("auth_abort").hidden = false;
+                        } else {
+                            this.fullDetectionContext = fullDetectionContext
+                            if (!this.fullDetectionContext.timeout) {
+                                this.fullDetectionContext.timeout = this.default_timeout;
+                            }
+                            if (this.fullDetectionContext.authenticMessage) {
+                                this.authenticationFeatureFoundMessage = this.fullDetectionContext.authenticMessage;
+                            }
+                            if (this.fullDetectionContext.timeoutMessage) {
+                                this.errorCodes.TIMEOUT.message = this.fullDetectionContext.timeoutMessage;
+                            }
+                            if (this.fullDetectionContext.abortedMessage) {
+                                this.errorCodes.ABORTED.message = this.fullDetectionContext.abortedMessage;
+                            }
+                            document.getElementById("auth_start").hidden = false;
                         }
                     });
                 })
