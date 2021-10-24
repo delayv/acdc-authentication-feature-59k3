@@ -193,30 +193,11 @@ export default class HomeController extends WebcController{
             this.abortPackAuthentication(this.errorCodes.ABORTED);
         })
 
-        getProductInfo(gs1Data.gtin, (err, product) => {
-            if (err) {
-                console.log(`Could not read product info`, err);
-                this.report(false, this.errorCodes.NO_PRODUCT_INFO);
-            }
-            else {
-                self.model.product = product;
-                getBatchInfo(gs1Data.gtin, gs1Data.batchNumber, (err, batch) => {
-                    if (err) {
-                        console.log(`Could not read batch data`, err);
-                        this.report(false, this.errorCodes.NO_BATCH_INFO);
-                    }
-                    else
-                        self.model.batch = batch;
-                });
-                // cannot get deviceInfo at this stage because camera has not started. 
-                //   TODO: adapt native wrapper
-                //         left as an enhancement for future version. For now we re-get fullDetectionContext after camera has started so we can add deviceInfo in request body 
-                this.productClientInfo = { 
-                    ...gs1Data, 
-                    ...{name: product.name}, ...{version: product.version}, ...{description: product.description}, ...{manufName: product.manufName} };
-                this.startup();
-            }
-        });
+        // cannot get deviceInfo at this stage because camera has not started. 
+        //   TODO: adapt native wrapper
+        //         left as an enhancement for future version. For now we re-get fullDetectionContext after camera has started so we can add deviceInfo in request body 
+        this.productClientInfo = { ...gs1Data };
+        this.startup();
     }
 
     startup() {
