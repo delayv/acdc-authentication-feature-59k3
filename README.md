@@ -9,5 +9,5 @@ Scanning instructions:
 
 1. Place package on a flat surface for ease of use
 2. Tap the start button
-3. Align the camera torch inside the red reticle
-4. Hover over the sample, maintaining a distance of about 13cm between the phone and the sample
+3. Align the camera torch inside the reticle
+4. Hover over the sample, maintaining a distance of about 10cm between the phone and the sample
