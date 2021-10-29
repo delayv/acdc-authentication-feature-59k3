@@ -14,3 +14,5 @@ For each test describe:
 
 
 Mobile data consumption estimation: 15KiloBytes per second of video-capture.
+
+This estimate is just about executing the authentication feature, and excludes the code loading traffic (and also previous leaflet loading traffic).
