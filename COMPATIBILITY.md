@@ -17,6 +17,7 @@ Mobile data consumption estimation: 15KiloBytes per second of video-capture.
 
 This estimate is just about executing the authentication feature, and excludes the code loading traffic (and also previous leaflet loading traffic).
 
+# 59k3 Authentication Feature
 ## Measured timing from an Ad-Hoc build from:
 * acdc-workspace: commit 03271f68f88d3e7473a75d12bc612d640ff08c0d
 * acdc-authentication-feature-59k3: 38f82e003ba2573e69d1dec85e691feb77fb1e3f
