@@ -282,7 +282,7 @@ export default class HomeController extends WebcController{
     }
 
     _bindElements() {
-        this.uiElements.streamPreview = this.element.querySelector('#streamPreview');
+        this.uiElements.streamPreviewCanvas = this.element.querySelector('#streamPreviewCanvas');
         this.uiElements.overlay = this.element.querySelector('#overlay');
         this.uiElements.okOverlay = this.element.querySelector('#ok_overlay');
     }
@@ -290,14 +290,13 @@ export default class HomeController extends WebcController{
     startCamera(config) {
         nativeBridge.startNativeCameraWithConfig(
             config,
-            undefined,
+            this.onFramePreview.bind(this),
             25,
-            640,
+            540,
             undefined,
             10,
             () => {
                 this.cameraRunning = true;
-                this.uiElements.streamPreview.src = `${window.Native.Camera.cameraProps._serverUrl}/mjpeg`;
                 // re-get fullDetectionContext adapted to available deviceInfo (see TODO in constructor)
                 nativeBridge.getDeviceInfo().then(di => {
                     this.deviceInfo = di;
@@ -333,6 +332,27 @@ export default class HomeController extends WebcController{
             undefined,
             undefined,
             false);
+    }
+
+    placeUint8RGBArrayInCanvas(canvasElem, array, w, h) {
+        canvasElem.width = w;
+        canvasElem.height = h;
+        const ctx = canvasElem.getContext('2d');
+        const clampedArray = new Uint8ClampedArray(w*h*4);
+        let j = 0
+        for (let i = 0; i < 3*w*h; i+=3) {
+            clampedArray[j] = array[i];
+            clampedArray[j+1] = array[i+1];
+            clampedArray[j+2] = array[i+2];
+            clampedArray[j+3] = 255;
+            j += 4;
+        }
+        const imageData = new ImageData(clampedArray, w, h);
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    onFramePreview(rgbImage, elapsedTime) {
+        this.placeUint8RGBArrayInCanvas(this.uiElements.streamPreviewCanvas, new Uint8Array(rgbImage.arrayBuffer), rgbImage.width, rgbImage.height);
     }
 
     authenticatePack() {
