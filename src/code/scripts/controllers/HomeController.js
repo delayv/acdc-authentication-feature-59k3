@@ -162,6 +162,7 @@ export default class HomeController extends WebcController{
     constructor(element, history, ...args) {
         super(element, history, ...args);
         this._bindElements();
+        this.createOkOverlayPath();
         this.endpoint = "https://a.2001u1.com/api/v1/detectioncontext";
         this.token = "{token_here}";
         this.sioEndpoint = "wss://d.2001u1.com";
@@ -170,10 +171,10 @@ export default class HomeController extends WebcController{
         this.productClientInfo = undefined;
         this.defaultTimeout = undefined;
         this.errorCodes = {
-            ABORTED: {error: 101, message: "Aborted"},
-            TIMEOUT: {error: 102, message: "Timeout"},
-            NO_PRODUCT_INFO: {error: 103, message: `Could not read product info`},
-            NO_BATCH_INFO: {error: 104, message: `Could not read batch data`}
+            ABORTED: {code: 101, message: "Aborted"},
+            TIMEOUT: {code: 102, message: "Timeout"},
+            NO_PRODUCT_INFO: {code: 103, message: `Could not read product info`},
+            NO_BATCH_INFO: {code: 104, message: `Could not read batch data`}
         };
         this.authenticationFeatureFoundMessage = "Feature Found";
         this.roiId = 0;
@@ -211,6 +212,16 @@ export default class HomeController extends WebcController{
         });
     }
 
+    createOkOverlayPath() {
+        this.uiElements.okOverlay.width = 118;
+        this.uiElements.okOverlay.height = 118;
+        const ctx = this.uiElements.okOverlay.getContext('2d');
+        let path1 = new Path2D('M58.86,0c9.13,0,17.77,2.08,25.49,5.79c-3.16,2.5-6.09,4.9-8.82,7.21c-5.2-1.89-10.81-2.92-16.66-2.92 c-13.47,0-25.67,5.46-34.49,14.29c-8.83,8.83-14.29,21.02-14.29,34.49c0,13.47,5.46,25.66,14.29,34.49 c8.83,8.83,21.02,14.29,34.49,14.29s25.67-5.46,34.49-14.29c8.83-8.83,14.29-21.02,14.29-34.49c0-3.2-0.31-6.34-0.9-9.37 c2.53-3.3,5.12-6.59,7.77-9.85c2.08,6.02,3.21,12.49,3.21,19.22c0,16.25-6.59,30.97-17.24,41.62 c-10.65,10.65-25.37,17.24-41.62,17.24c-16.25,0-30.97-6.59-41.62-17.24C6.59,89.83,0,75.11,0,58.86 c0-16.25,6.59-30.97,17.24-41.62S42.61,0,58.86,0L58.86,0z M31.44,49.19L45.8,49l1.07,0.28c2.9,1.67,5.63,3.58,8.18,5.74 c1.84,1.56,3.6,3.26,5.27,5.1c5.15-8.29,10.64-15.9,16.44-22.9c6.35-7.67,13.09-14.63,20.17-20.98l1.4-0.54H114l-3.16,3.51 C101.13,30,92.32,41.15,84.36,52.65C76.4,64.16,69.28,76.04,62.95,88.27l-1.97,3.8l-1.81-3.87c-3.34-7.17-7.34-13.75-12.11-19.63 c-4.77-5.88-10.32-11.1-16.79-15.54L31.44,49.19L31.44,49.19z');
+        ctx.fillStyle = "#01A601";
+        ctx.fill(path1);
+        this.uiElements.okOverlay.setAttribute("style", "position: absolute; top:50%; left:50%; transform: translate(-50%,-50%); opacity: 0; transition: opacity 1500ms;");
+    }
+
     startup() {
         const clientInfo = {product: this.productClientInfo};   
         this.getDetectionContext(clientInfo).then(fullDetectionContext => {
@@ -220,9 +231,12 @@ export default class HomeController extends WebcController{
                 if (currentResult.authentic) {
                     this.cameraRunning = false
                     nativeBridge.stopNativeCamera();
-                    const message = this.authenticationFeatureFoundMessage;
-                    alert(message);
-                    this.report(true, undefined);
+                    // const message = this.authenticationFeatureFoundMessage;
+                    // alert(message);
+                    this.uiElements.okOverlay.style.opacity = "1.0";
+                    setTimeout(() => {
+                        this.report(true, undefined);
+                    }, 1200);
                 } else if (this.cameraRunning) {
                     // console.log(`Should redo detection`);
                     this.roiId = (this.roiId+1)%this.fullDetectionContext.rois.length;
@@ -270,6 +284,7 @@ export default class HomeController extends WebcController{
     _bindElements() {
         this.uiElements.streamPreview = this.element.querySelector('#streamPreview');
         this.uiElements.overlay = this.element.querySelector('#overlay');
+        this.uiElements.okOverlay = this.element.querySelector('#ok_overlay');
     }
 
     startCamera(config) {
