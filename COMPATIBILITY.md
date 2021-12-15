@@ -37,3 +37,20 @@ This estimate is just about executing the authentication feature, and excludes t
 * (1): Interpreted as time-to-detect (i.e.: the time it takes to obtain positive authentication of the package)
 * (2): Using `Native` menu, hd1920x1080, RGB, torch ON, Button `Start(MJPEG)`, reporting value `max FPS=xx`
 * (3): Small framerate drop to 16FPS at ~60s during ~5s, then continues smoothly. Framerate was observed during more than 5min.
+
+## Memory Footprint vs Number of GCDWebserver Instances
+
+|milestone in app | 2 webservers (MB) | 1 webserver (MB) |
+|-----------------|--------------|-------------|
+|Before WkWebview Loaded|31|32|
+|Before Datamatrix Scan|99|87|
+|Before 59k3 SSAPP Launch|73|86|
+|59k3 SSAPP Running|from 170 to 195|from 150 to 175|
+|Back To Home Page|108|108
+
+### Context
+Code has been rapidly modified so that webserver instance inside ApiContainer can be passed as reference to PharmaledgerMessageHandler instance.  
+When repeating the measurement several time, number can differ from +/-20MB for all milestones except the first one.
+
+### Conclusion
+Having 2 GCDWebServer instances does not have a huge impact on memory footprint.
