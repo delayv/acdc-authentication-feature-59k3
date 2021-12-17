@@ -38,6 +38,18 @@ This estimate is just about executing the authentication feature, and excludes t
 * (2): Using `Native` menu, hd1920x1080, RGB, torch ON, Button `Start(MJPEG)`, reporting value `max FPS=xx`
 * (3): Small framerate drop to 16FPS at ~60s during ~5s, then continues smoothly. Framerate was observed during more than 5min.
 
+## Startup Time
+Using and iPhone 8, timers were placed in the code to measure the time elapsed between:
+1. The moment `HomeController` constructor is reached and the moment the information about GS1 code is obtained: **350ms**
+2. The moment GS1 code information is obtained and the moment the user can tap the start button to begin authentication of the product: **1570ms**  
+Total initialization time once the SSAPP is loaded: **1920ms**
+
+This initialization time has been compared to the initialization time in another native app, using the same camera framework and almost the same javascript code.  
+The webapp part of this app has been built with [Ionic PWA Toolkit](https://github.com/ionic-team/ionic-pwa-toolkit).
+In this scenario, there is no GS1 code to interpret, only the initialization procedure described under point 2 above.  
+**Measured initialization time: 1680ms**
+
+
 ## Number of GCDWebServer Instances Impact
 ### Memory Footprint
 
