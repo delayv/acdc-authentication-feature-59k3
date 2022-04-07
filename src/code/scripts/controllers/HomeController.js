@@ -114,44 +114,20 @@ const getQueryStringParams = () => {
         : {}
 };
 
-const getProductInfo = function(gtin, callback){
+const getProductInfo = async function(gtinFields, callback){
     const gtinResolver = require('gtin-resolver');
-    const keySSI = gtinResolver.createGTIN_SSI('epi', 'epi', gtin);
-    const resolver = require('opendsu').loadApi('resolver');
-    resolver.loadDSU(keySSI, (err, dsu) => {
-        if (err)
-            return callback(err);
-        dsu.readFile('product/product.json', (err, product) => {
-            if (err)
-                return callback(err);
-            try{
-                product = JSON.parse(product);
-            } catch (e) {
-                return callback(e);
-            }
-            callback(undefined, product);
-        });
-    })
+    const leafletInfoService = gtinResolver.LeafletInfoService;
+
+    let service = await leafletInfoService.init(gtinFields, gtinFields.domain || "epi");
+    service.readProductData(callback);
 }
 
-const getBatchInfo = function(gtin, batchNumber,  callback){
+const getBatchInfo = async function(gtinFields,  callback){
     const gtinResolver = require('gtin-resolver');
-    const keySSI = gtinResolver.createGTIN_SSI('epi', 'epi', gtin, batchNumber);
-    const resolver = require('opendsu').loadApi('resolver');
-    resolver.loadDSU(keySSI, (err, dsu) => {
-        if (err)
-            return callback(err);
-        dsu.readFile('batch/batch.json', (err, batch) => {
-            if (err)
-                return callback(err);
-            try{
-                batch = JSON.parse(batch);
-            } catch (e) {
-                return callback(e);
-            }
-            callback(undefined, batch);
-        });
-    })
+    const leafletInfoService = gtinResolver.LeafletInfoService;
+
+    let service = await leafletInfoService.init(gtinFields, gtinFields.domain || "epi");
+    service.readBatchData(callback);
 }
 
 export default class HomeController extends WebcController{
