@@ -173,7 +173,7 @@ export default class HomeController extends WebcController{
         // cannot get deviceInfo at this stage because camera has not started. 
         //   TODO: adapt native wrapper
         //         left as an enhancement for future version. For now we re-get fullDetectionContext after camera has started so we can add deviceInfo in request body 
-        getProductInfo(gs1Data.gtin, (err, product) => {
+        getProductInfo(gs1Data, (err, product) => {
             if (err) {
                 console.log(`Could not read product info`, err);
                 this.report(false, this.errorCodes.NO_PRODUCT_INFO);
