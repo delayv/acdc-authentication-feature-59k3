@@ -49,7 +49,6 @@ class RemoteDetection {
                 product_id: "a"
             }
         }
-        // console.log(`sending frame length ${crop.byteLength}, w=${raw.width}, h=${raw.height}`);
         this.sioClient.emit('det', dataToEmit);        
     }
 
@@ -198,6 +197,16 @@ export default class HomeController extends WebcController{
         this.uiElements.okOverlay.setAttribute("style", "position: absolute; top:50%; left:50%; transform: translate(-50%,-50%); opacity: 0; transition: opacity 1500ms;");
     }
 
+    createFailureOverlayPath() {
+        this.uiElements.failureOverlay.width = 118;
+        this.uiElements.failureOverlay.height = 118;
+        const ctx = this.uiElements.failureOverlay.getContext('2d');
+        let path1 = new Path2D('m26.744 32.583 26.394 28.145-25.693 28.612 14.131 0.46714 19.27-20.905 18.102 24.525 9.81-5.2554-21.956-26.277 40.758-43.328-18.802 4.4379-29.78 31.649-20.554-23.007zm32.116-32.583c9.13 0 17.77 2.08 25.49 5.79-3.16 2.5-6.09 4.9-8.82 7.21-5.2-1.89-10.81-2.92-16.66-2.92-13.47 0-25.67 5.46-34.49 14.29-8.83 8.83-14.29 21.02-14.29 34.49s5.46 25.66 14.29 34.49 21.02 14.29 34.49 14.29 25.67-5.46 34.49-14.29c8.83-8.83 14.29-21.02 14.29-34.49 0-3.2-0.31-6.34-0.9-9.37 2.53-3.3 5.12-6.59 7.77-9.85 2.08 6.02 3.21 12.49 3.21 19.22 0 16.25-6.59 30.97-17.24 41.62s-25.37 17.24-41.62 17.24-30.97-6.59-41.62-17.24c-10.66-10.65-17.25-25.37-17.25-41.62s6.59-30.97 17.24-41.62 25.37-17.24 41.62-17.24z');
+        ctx.fillStyle = "#FF0000";
+        ctx.fill(path1);
+        this.uiElements.failureOverlay.setAttribute("style", "position: absolute; top:50%; left:50%; transform: translate(-50%,-50%); opacity: 0; transition: opacity 1500ms;");
+    }
+
     startup() {
         const clientInfo = {product: this.productClientInfo};   
         this.getDetectionContext(clientInfo).then(fullDetectionContext => {
@@ -209,6 +218,7 @@ export default class HomeController extends WebcController{
                     nativeBridge.stopNativeCamera();
                     // const message = this.authenticationFeatureFoundMessage;
                     // alert(message);
+                    document.getElementById("auth_abort").hidden = true;
                     this.uiElements.okOverlay.style.opacity = "1.0";
                     setTimeout(() => {
                         this.report(true, undefined);
@@ -261,6 +271,7 @@ export default class HomeController extends WebcController{
         this.uiElements.streamPreviewCanvas = this.element.querySelector('#streamPreviewCanvas');
         this.uiElements.overlay = this.element.querySelector('#overlay');
         this.uiElements.okOverlay = this.element.querySelector('#ok_overlay');
+        this.uiElements.failureOverlay = this.element.querySelector('#failure_overlay');
     }
 
     startCamera(config) {
@@ -338,14 +349,15 @@ export default class HomeController extends WebcController{
         this.iterativeDetections();
         if (this.fullDetectionContext.timeout) {
             setTimeout(() => {
-                this.abortPackAuthentication(this.errorCodes.TIMEOUT)
+                if (this.cameraRunning) {
+                    this.abortPackAuthentication(this.errorCodes.TIMEOUT)
+                }
             }, 1000.0*this.fullDetectionContext.timeout);
         }
     }
 
     iterativeDetections() {
         const roi = this.fullDetectionContext.rois[this.roiId];
-        console.log(`roi_${this.roiId}: (${roi.x}, ${roi.y}, ${roi.w}, ${roi.h})`);
         var getFrameFct = undefined;
         if (roi.channels === 1) {
             getFrameFct = nativeBridge.getRawFrameYCbCr;
@@ -372,7 +384,11 @@ export default class HomeController extends WebcController{
     abortPackAuthentication(error) {
         this.cameraRunning = false;
         nativeBridge.stopNativeCamera();
-        this.report(false, error);
+        document.getElementById("auth_abort").hidden = true;
+        this.uiElements.failureOverlay.style.opacity = "1.0";
+        setTimeout(() => {
+            this.report(false, error);
+        }, 1200);
     }
 
     report(status, error){
