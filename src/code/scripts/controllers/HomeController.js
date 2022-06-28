@@ -141,8 +141,8 @@ export default class HomeController extends WebcController{
         this.createFailureOverlayPath();
         this.endpoint = "https://a.2001u1.com/api/v1/detectioncontext";
         this.token = "{token_here}";
-        this.sioEndpoint = "wss://d.2001u1.com";
-        this.sioToken = '{token_here}'
+
+        
         this.remoteDetection = undefined;
         this.productClientInfo = undefined;
         this.defaultTimeout = undefined;
@@ -212,7 +212,7 @@ export default class HomeController extends WebcController{
         const clientInfo = {product: this.productClientInfo};   
         this.getDetectionContext(clientInfo).then(fullDetectionContext => {
             this.fullDetectionContext = fullDetectionContext
-            this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint || this.sioEndpoint, this.sioToken, (detResult) => {
+            this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint, this.fullDetectionContext.sioToken, (detResult) => {
                 let currentResult = detResult
                 if (currentResult.authentic) {
                     this.cameraRunning = false
