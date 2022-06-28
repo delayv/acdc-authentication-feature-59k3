@@ -138,6 +138,7 @@ export default class HomeController extends WebcController{
         super(element, history, ...args);
         this._bindElements();
         this.createOkOverlayPath();
+        this.createFailureOverlayPath();
         this.endpoint = "https://a.2001u1.com/api/v1/detectioncontext";
         this.token = "{token_here}";
         this.sioEndpoint = "wss://d.2001u1.com";
