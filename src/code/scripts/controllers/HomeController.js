@@ -1,7 +1,7 @@
-import interpretGS1scan from "../utils/interpretGS1scan/interpretGS1scan.js";
+import config from "../../config.js";
 
 const {WebcController} = WebCardinal.controllers;
-const {constants, PLCameraConfig, nativeBridge, imageTypes} = window.Native.Camera;
+const {nativeBridge} = window.Native.Camera;
 
 class RemoteDetection {
     constructor(sioEndpoint, preshared_jwt_token, onResultReceived) {
@@ -49,7 +49,7 @@ class RemoteDetection {
                 product_id: "a"
             }
         }
-        this.sioClient.emit('det', dataToEmit);        
+        this.sioClient.emit('det', dataToEmit);
     }
 
 }
@@ -79,8 +79,7 @@ class AuthFeatureResponse  {
     }
 }
 
-function customCopyBuffer(buffer)
-{
+function customCopyBuffer(buffer) {
     var bytes = new Uint8Array(buffer);
     var output = new ArrayBuffer(buffer.byteLength);
     var outputBytes = new Uint8Array(output);
@@ -113,51 +112,27 @@ const getQueryStringParams = () => {
         : {}
 };
 
-const getProductInfo = async function(gtinFields, callback){
-    const gtinResolver = require('gtin-resolver');
-    const leafletInfoService = gtinResolver.LeafletInfoService;
-
-    let service = await leafletInfoService.init(gtinFields, gtinFields.domain || "epi");
-    service.readProductData(callback);
-}
-
-const getBatchInfo = async function(gtinFields,  callback){
-    const gtinResolver = require('gtin-resolver');
-    const leafletInfoService = gtinResolver.LeafletInfoService;
-
-    let service = await leafletInfoService.init(gtinFields, gtinFields.domain || "epi");
-    service.readBatchData(callback);
-}
-
 export default class HomeController extends WebcController{
     uiElements = {};
     cameraRunning = false;
-
 
     constructor(element, history, ...args) {
         super(element, history, ...args);
         this._bindElements();
         this.createOkOverlayPath();
         this.createFailureOverlayPath();
-        this.endpoint = "https://a.2001u1.com/api/v1/detectioncontext";
-        this.token = "{token_here}";
+        this.endpoint = config.endpoint;
+        this.token = config.token;
 
-        
         this.remoteDetection = undefined;
-        this.productClientInfo = undefined;
+        this.productClientInfo = {...getQueryStringParams()};
         this.defaultTimeout = undefined;
         this.errorCodes = {
             ABORTED: {code: 101, message: "Aborted"},
-            TIMEOUT: {code: 102, message: "Timeout"},
-            NO_PRODUCT_INFO: {code: 103, message: `Could not read product info`},
-            NO_BATCH_INFO: {code: 104, message: `Could not read batch data`}
+            TIMEOUT: {code: 102, message: "Timeout"}
         };
         this.authenticationFeatureFoundMessage = "Feature Found";
         this.roiId = 0;
-
-        const gs1Data = getQueryStringParams();
-        this.model.gs1Data = gs1Data;
-        const self = this;
 
         this.onTagClick('auth', () => {
             // this.navigateToPageTag('auth');
@@ -173,19 +148,8 @@ export default class HomeController extends WebcController{
         // cannot get deviceInfo at this stage because camera has not started. 
         //   TODO: adapt native wrapper
         //         left as an enhancement for future version. For now we re-get fullDetectionContext after camera has started so we can add deviceInfo in request body 
-        getProductInfo(gs1Data, (err, product) => {
-            if (err) {
-                console.log(`Could not read product info`, err);
-                this.report(false, this.errorCodes.NO_PRODUCT_INFO);
-                return;
-            } else {
-                this.model.product = product;
-                this.productClientInfo = { 
-                    ...gs1Data, 
-                    ...{name: product.name}, ...{version: product.version}, ...{description: product.description}, ...{manufName: product.manufName} };
-                this.startup();
-            }
-        });
+
+        this.startup();
     }
 
     createOkOverlayPath() {
@@ -209,11 +173,10 @@ export default class HomeController extends WebcController{
     }
 
     startup() {
-        const clientInfo = {product: this.productClientInfo};   
+        const clientInfo = {product: this.productClientInfo};
         this.getDetectionContext(clientInfo).then(fullDetectionContext => {
             this.fullDetectionContext = fullDetectionContext
-            this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint, this.fullDetectionContext.sioToken, (detResult) => {
-                let currentResult = detResult
+            this.remoteDetection = new RemoteDetection(this.fullDetectionContext.sioEndpoint, this.fullDetectionContext.sioToken, (currentResult) => {
                 if (currentResult.authentic) {
                     this.cameraRunning = false
                     nativeBridge.stopNativeCamera();
@@ -238,21 +201,20 @@ export default class HomeController extends WebcController{
             this.startCamera(cameraConfigForStartup);
         });
     }
-    
 
     getDetectionContext(clientInfo) {
-        return fetch(this.endpoint, { 
-            method: 'post', 
+        return fetch(this.endpoint, {
+            method: 'post',
             headers: new Headers({
-              'Authorization': 'bearer ' + this.token, 
+              'Authorization': 'bearer ' + this.token,
               'Content-Type': 'application/json'
-            }), 
+            }),
             body: JSON.stringify(clientInfo)
         }).then((response) => {
             if (response.status >= 400 && response.status < 600) {
                 throw new Error("Bad response from server");
             }
-            return response; 
+            return response;
         }).then((response) => {
             return response.json().then((context) => {
                 if (context === undefined) {
@@ -290,7 +252,7 @@ export default class HomeController extends WebcController{
                     this.deviceInfo = di;
                     const clientInfo = {
                         product: this.productClientInfo,
-                        deviceInfo: this.deviceInfo 
+                        deviceInfo: this.deviceInfo
                     }
                     this.getDetectionContext(clientInfo).then(fullDetectionContext => {
                         if (fullDetectionContext === undefined) {
